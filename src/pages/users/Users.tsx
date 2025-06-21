@@ -1,12 +1,13 @@
-import { Breadcrumb, Button, Drawer, Space, Table } from 'antd';
+import { Breadcrumb, Button, Drawer, Form, Space, Table, theme } from 'antd';
 import { RightOutlined, PlusOutlined } from '@ant-design/icons';
 import { Link, Navigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { getUsers } from '../../http/api';
-import type { User } from '../../types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createUser, getUsers } from '../../http/api';
+import type { CreateUserData, User } from '../../types';
 import { useAuthStore } from '../../store';
 import UsersFilter from './UsersFilter';
 import React from 'react';
+import UserForm from './forms/UserForm';
 
 const columns = [
     {
@@ -39,6 +40,12 @@ const columns = [
 ];
 
 const Users = () => {
+    const [form] = Form.useForm();
+    const queryClient = useQueryClient();
+    const {
+        token: { colorBgLayout },
+    } = theme.useToken();
+
     const [drawerOpen, setDrawerOpen] = React.useState(false);
     const {
         data: users,
@@ -53,6 +60,22 @@ const Users = () => {
     });
     
     const { user } = useAuthStore();
+
+    const { mutate: userMutate } = useMutation({
+        mutationKey: ['user'],
+        mutationFn: async (data: CreateUserData) => createUser(data).then((res) => res.data),
+        onSuccess: async () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            return;
+        },
+    });
+
+    const onHandleSubmit = async () => {
+        await form.validateFields();
+        await userMutate(form.getFieldsValue());
+        form.resetFields();
+        setDrawerOpen(false);
+    };
 
     if (user?.role !== 'admin') {
         return <Navigate to="/" replace={true} />;
@@ -86,6 +109,7 @@ const Users = () => {
 <Drawer
                     title="Create user"
                     width={720}
+                    styles={{ body: { backgroundColor: colorBgLayout } }}
                     destroyOnClose={true}
                     open={drawerOpen}
                     onClose={() => {
@@ -93,12 +117,21 @@ const Users = () => {
                     }}
                     extra={
                         <Space>
-                            <Button>Cancel</Button>
-                            <Button type="primary">Submit</Button>
+                             <Button
+                                onClick={() => {
+                                    form.resetFields();
+                                    setDrawerOpen(false);
+                                }}>
+                                Cancel
+                            </Button>
+                            <Button type="primary" onClick={onHandleSubmit}>
+                                Submit
+                            </Button>
                         </Space>
                     }>
-                    <p>Some contents...</p>
-                    <p>Some contents...</p>
+                      <Form layout="vertical" form={form}>
+                        <UserForm />
+                    </Form>
                 </Drawer>
             </Space>
         </>
