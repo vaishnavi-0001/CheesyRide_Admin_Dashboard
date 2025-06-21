@@ -4,6 +4,7 @@ import { PlusOutlined } from '@ant-design/icons';
 type UsersFilterProps = {
     onFilterChange: (filterName: string, filterValue: string) => void;
 };
+
 const UsersFilter = ({ onFilterChange }: UsersFilterProps) => {
     return (
         <Card>
@@ -11,7 +12,7 @@ const UsersFilter = ({ onFilterChange }: UsersFilterProps) => {
                 <Col span={16}>
                     <Row gutter={20}>
                         <Col span={8}>
-                        <Input.Search
+                            <Input.Search
                                 allowClear={true}
                                 placeholder="Search"
                                 onChange={(e) => onFilterChange('searchFilter', e.target.value)}
@@ -24,20 +25,22 @@ const UsersFilter = ({ onFilterChange }: UsersFilterProps) => {
                                 onChange={(selectedItem) =>
                                     onFilterChange('roleFilter', selectedItem)
                                 }
-                                placeholder="Select role">
+                                placeholder="Select role"
+                            >
                                 <Select.Option value="admin">Admin</Select.Option>
                                 <Select.Option value="manager">Manager</Select.Option>
                                 <Select.Option value="customer">Customer</Select.Option>
                             </Select>
                         </Col>
                         <Col span={8}>
-                        <Select
+                            <Select
                                 style={{ width: '100%' }}
                                 placeholder="Status"
                                 allowClear={true}
                                 onChange={(selectedItem) =>
                                     onFilterChange('statusFilter', selectedItem)
-                                }>
+                                }
+                            >
                                 <Select.Option value="ban">Ban</Select.Option>
                                 <Select.Option value="active">Active</Select.Option>
                             </Select>
@@ -45,7 +48,15 @@ const UsersFilter = ({ onFilterChange }: UsersFilterProps) => {
                     </Row>
                 </Col>
                 <Col span={8} style={{ display: 'flex', justifyContent: 'end' }}>
-                    <Button type="primary" icon={<PlusOutlined />}>
+                    <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        style={{
+                            backgroundColor: '#4CAF50',
+                            borderColor: '#4CAF50',
+                            color: '#fff',
+                        }}
+                    >
                         Add User
                     </Button>
                 </Col>
