@@ -102,7 +102,12 @@ const Dashboard = () => {
             }}
           >
             <Flex gap="middle" align="center" justify="space-between">
-              <Badge text="Global" status="success" />
+            <Badge
+                                text={
+                                    user.role === 'admin' ? 'You are an admin' : user.tenant?.name
+                                }
+                                status="success"
+                            />
               <Space size={16} style={{ lineHeight: 1 }}>
                 <Badge dot color="#4CAF50" offset={[-2, -2]}>
                   <BellFilled style={{ fontSize: 18, verticalAlign: 'middle' }} />
