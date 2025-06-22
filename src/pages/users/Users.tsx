@@ -79,7 +79,6 @@ const Users = () => {
         currentPage: 1,
     });
 
-
     const [drawerOpen, setDrawerOpen] = React.useState(false);
     const {
         data: users,
@@ -100,7 +99,7 @@ const Users = () => {
         },
         placeholderData: keepPreviousData,
     });
-    
+
     const { user } = useAuthStore();
 
     const { mutate: userMutate } = useMutation({
@@ -121,10 +120,9 @@ const Users = () => {
 
     const debouncedQUpdate = React.useMemo(() => {
         return debounce((value: string | undefined) => {
-            setQueryParams((prev) => ({ ...prev, q: value }));
+            setQueryParams((prev) => ({ ...prev, q: value, currentPage: 1 }));
         }, 500);
     }, []);
-
 
     const onFilterChange = (changedFields: FieldData[]) => {
         const changedFilterFields = changedFields
@@ -133,23 +131,21 @@ const Users = () => {
             }))
             .reduce((acc, item) => ({ ...acc, ...item }), {});
 
-
-            if ('q' in changedFilterFields) {
-                debouncedQUpdate(changedFilterFields.q);
-            } else {
-                setQueryParams((prev) => ({ ...prev, ...changedFilterFields }));
-            }
+        if ('q' in changedFilterFields) {
+            debouncedQUpdate(changedFilterFields.q);
+        } else {
+            setQueryParams((prev) => ({ ...prev, ...changedFilterFields, currentPage: 1 }));
+        }
     };
 
     if (user?.role !== 'admin') {
         return <Navigate to="/" replace={true} />;
     }
 
-
     return (
         <>
-           <Space direction="vertical" size="large" style={{ width: '100%' }}>
-           <Flex justify="space-between">
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                <Flex justify="space-between">
                     <Breadcrumb
                         separator={<RightOutlined />}
                         items={[{ title: <Link to="/">Dashboard</Link> }, { title: 'Users' }]}
@@ -170,7 +166,6 @@ const Users = () => {
                         </Button>
                     </UsersFilter>
                 </Form>
-                   
 
                 <Table
                     columns={columns}
@@ -189,20 +184,26 @@ const Users = () => {
                                 };
                             });
                         },
+                        showTotal: (total: number, range: number[]) => {
+                            console.log(total, range);
+                            return `Showing ${range[0]}-${range[1]} of ${total} items`;
+                        },
                     }}
                 />
-<Drawer
+
+                <Drawer
                     title="Create user"
                     width={720}
                     styles={{ body: { backgroundColor: colorBgLayout } }}
                     destroyOnClose={true}
                     open={drawerOpen}
                     onClose={() => {
+                        form.resetFields();
                         setDrawerOpen(false);
                     }}
                     extra={
                         <Space>
-                             <Button
+                            <Button
                                 onClick={() => {
                                     form.resetFields();
                                     setDrawerOpen(false);
@@ -214,7 +215,7 @@ const Users = () => {
                             </Button>
                         </Space>
                     }>
-                      <Form layout="vertical" form={form}>
+                    <Form layout="vertical" form={form}>
                         <UserForm />
                     </Form>
                 </Drawer>
