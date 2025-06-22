@@ -1,11 +1,14 @@
-import { Breadcrumb, Button, Drawer, Space, Table } from 'antd';
+import { Breadcrumb, Button, Drawer, Form, Space, Table, theme } from 'antd';
 import { RightOutlined, PlusOutlined } from '@ant-design/icons';
 import { Link, Navigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store';
 import React from 'react';
 import TenantFilter from './TenantFilter';
-import { getTenants } from '../../http/api';
+import { createTenant, getTenants } from '../../http/api';
+import TenantForm from './forms/TenantForm';
+import type { CreateTenantData } from '../../types';
+import { PER_PAGE } from '../../../constants';
 
 const columns = [
     {
@@ -26,6 +29,17 @@ const columns = [
 ];
 
 const Tenants = () => {
+    const {
+        token: { colorBgLayout },
+    } = theme.useToken();
+
+    const [form] = Form.useForm();
+
+    const [queryParams, setQueryParams] = React.useState({
+        perPage: PER_PAGE,
+        currentPage: 1,
+    });
+
     const [drawerOpen, setDrawerOpen] = React.useState(false);
     const {
         data: tenants,
@@ -33,13 +47,40 @@ const Tenants = () => {
         isError,
         error,
     } = useQuery({
-        queryKey: ['tenants'],
+        queryKey: ['tenants', queryParams],
         queryFn: () => {
-            return getTenants().then((res) => res.data);
+            const filteredParams = Object.fromEntries(
+                Object.entries(queryParams).filter((item) => !!item[1])
+            );
+
+            const queryString = new URLSearchParams(
+                filteredParams as unknown as Record<string, string>
+            ).toString();
+
+            return getTenants(queryString).then((res) => res.data);
         },
+        placeholderData: keepPreviousData,
     });
 
     const { user } = useAuthStore();
+
+    const queryClient = useQueryClient();
+    const { mutate: tenantMutate } = useMutation({
+        mutationKey: ['tenant'],
+        mutationFn: async (data: CreateTenantData) => createTenant(data).then((res) => res.data),
+        onSuccess: async () => {
+            queryClient.invalidateQueries({ queryKey: ['tenants'] });
+            return;
+        },
+    });
+
+    const onHandleSubmit = async () => {
+        await form.validateFields();
+        await tenantMutate(form.getFieldsValue());
+        form.resetFields();
+        setDrawerOpen(false);
+    };
+
 
     if (user?.role !== 'admin') {
         return <Navigate to="/" replace={true} />;
@@ -67,10 +108,30 @@ const Tenants = () => {
                     </Button>
                 </TenantFilter>
 
-                <Table columns={columns} dataSource={tenants} rowKey={'id'} />
+                <Table
+                    columns={columns}
+                    dataSource={tenants?.data}
+                    rowKey={'id'}
+                    pagination={{
+                        total: tenants?.total,
+                        pageSize: queryParams.perPage,
+                        current: queryParams.currentPage,
+                        onChange: (page) => {
+                            console.log(page);
+                            setQueryParams((prev) => {
+                                return {
+                                    ...prev,
+                                    currentPage: page,
+                                };
+                            });
+                        },
+                    }}
+                />
+
 
                 <Drawer
                     title="Create restaurant"
+                    styles={{ body: { backgroundColor: colorBgLayout } }}
                     width={720}
                     destroyOnClose={true}
                     open={drawerOpen}
@@ -79,12 +140,21 @@ const Tenants = () => {
                     }}
                     extra={
                         <Space>
-                            <Button>Cancel</Button>
-                            <Button type="primary">Submit</Button>
+                             <Button
+                                onClick={() => {
+                                    form.resetFields();
+                                    setDrawerOpen(false);
+                                }}>
+                                Cancel
+                            </Button>
+                            <Button type="primary" onClick={onHandleSubmit}>
+                                Submit
+                            </Button>
                         </Space>
                     }>
-                    <p>Some contents...</p>
-                    <p>Some contents...</p>
+                  <Form layout="vertical" form={form}>
+                        <TenantForm />
+                    </Form>
                 </Drawer>
             </Space>
         </>
