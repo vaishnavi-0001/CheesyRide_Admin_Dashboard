@@ -1,5 +1,16 @@
-import { Breadcrumb, Button, Drawer, Form, Space, Table, theme } from 'antd';
-import { RightOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+    Breadcrumb,
+    Button,
+    Drawer,
+    Flex,
+    Form,
+    Space,
+    Spin,
+    Table,
+    Typography,
+    theme,
+} from 'antd';
+import { RightOutlined, PlusOutlined, LoadingOutlined } from '@ant-design/icons';
 import { Link, Navigate } from 'react-router-dom';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store';
@@ -7,8 +18,9 @@ import React from 'react';
 import TenantFilter from './TenantFilter';
 import { createTenant, getTenants } from '../../http/api';
 import TenantForm from './forms/TenantForm';
-import type { CreateTenantData } from '../../types';
+import type { CreateTenantData, FieldData } from '../../types';
 import { PER_PAGE } from '../../../constants';
+import { debounce } from 'lodash';
 
 const columns = [
     {
@@ -34,6 +46,7 @@ const Tenants = () => {
     } = theme.useToken();
 
     const [form] = Form.useForm();
+    const [filterForm] = Form.useForm();
 
     const [queryParams, setQueryParams] = React.useState({
         perPage: PER_PAGE,
@@ -43,7 +56,7 @@ const Tenants = () => {
     const [drawerOpen, setDrawerOpen] = React.useState(false);
     const {
         data: tenants,
-        isLoading,
+        isFetching,
         isError,
         error,
     } = useQuery({
@@ -81,6 +94,27 @@ const Tenants = () => {
         setDrawerOpen(false);
     };
 
+    
+    const debouncedQUpdate = React.useMemo(() => {
+        return debounce((value: string | undefined) => {
+            setQueryParams((prev) => ({ ...prev, q: value }));
+        }, 500);
+    }, []);
+
+    const onFilterChange = (changedFields: FieldData[]) => {
+        const changedFilterFields = changedFields
+            .map((item) => ({
+                [item.name[0]]: item.value,
+            }))
+            .reduce((acc, item) => ({ ...acc, ...item }), {});
+
+        if ('q' in changedFilterFields) {
+            debouncedQUpdate(changedFilterFields.q);
+        } else {
+            setQueryParams((prev) => ({ ...prev, ...changedFilterFields }));
+        }
+    };
+
 
     if (user?.role !== 'admin') {
         return <Navigate to="/" replace={true} />;
@@ -89,24 +123,27 @@ const Tenants = () => {
     return (
         <>
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                <Breadcrumb
-                    separator={<RightOutlined />}
-                    items={[{ title: <Link to="/">Dashboard</Link> }, { title: 'Tenants' }]}
-                />
-                {isLoading && <div>Loading...</div>}
-                {isError && <div>{error.message}</div>}
+            <Flex justify="space-between">
+                    <Breadcrumb
+                        separator={<RightOutlined />}
+                        items={[{ title: <Link to="/">Dashboard</Link> }, { title: 'Tenants' }]}
+                    />
+                    {isFetching && (
+                        <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+                    )}
+                    {isError && <Typography.Text type="danger">{error.message}</Typography.Text>}
+                </Flex>
 
-                <TenantFilter
-                    onFilterChange={(filterName: string, filterValue: string) => {
-                        console.log(filterName, filterValue);
-                    }}>
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={() => setDrawerOpen(true)}>
-                        Add Restaurant
-                    </Button>
-                </TenantFilter>
+                <Form form={filterForm} onFieldsChange={onFilterChange}>
+                    <TenantFilter>
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => setDrawerOpen(true)}>
+                            Add Restaurant
+                        </Button>
+                    </TenantFilter>
+                </Form>
 
                 <Table
                     columns={columns}
