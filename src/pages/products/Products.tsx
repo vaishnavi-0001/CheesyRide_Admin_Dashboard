@@ -1,16 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
-  Breadcrumb,
-  Button,
-  Flex,
-  Form,
-  Image,
-  Space,
-  Spin,
-  Table,
-  Tag,
-  Typography,
-} from "antd";
+    Breadcrumb,
+    Button,
+    Drawer,
+    Flex,
+    Form,
+    Image,
+    Space,
+    Spin,
+    Table,
+    Tag,
+    theme,
+    Typography,
+} from 'antd';
 import {
   RightOutlined,
   PlusOutlined,
@@ -25,6 +27,9 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getProducts } from "../../http/api";
 import { format } from "date-fns";
 import { debounce } from "lodash";
+import { useAuthStore } from '../../store';
+import ProductForm from './forms/ProductForm';
+
 
 const columns = [
   {
@@ -79,10 +84,19 @@ const columns = [
 
 const Products = () => {
   const [filterForm] = Form.useForm();
+  const [form] = Form.useForm();
+  const { user } = useAuthStore();
+
+  const {
+    token: { colorBgLayout },
+} = theme.useToken();
+const [drawerOpen, setDrawerOpen] = React.useState(false);
+
 
   const [queryParams, setQueryParams] = React.useState({
     limit: PER_PAGE,
     page: 1,
+    tenantId: user!.role === 'manager' ? user?.tenant?.id : undefined,
   });
 
   const {
@@ -124,6 +138,11 @@ const Products = () => {
     }
   };
 
+  const onHandleSubmit = () => {
+    console.log('submitting...');
+};
+
+
   return (
     <>
       <Space direction="vertical" size="large" style={{ width: "100%" }}>
@@ -148,7 +167,12 @@ const Products = () => {
 
         <Form form={filterForm} onFieldsChange={onFilterChange}>
           <ProductsFilter>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => {}}>
+          <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => {
+                                setDrawerOpen(true);
+                            }}>
               Add Product
             </Button>
           </ProductsFilter>
@@ -191,6 +215,35 @@ const Products = () => {
             },
           }}
         />
+
+<Drawer
+                    title={'Add Product'}
+                    width={720}
+                    styles={{ body: { backgroundColor: colorBgLayout } }}
+                    destroyOnClose={true}
+                    open={drawerOpen}
+                    onClose={() => {
+                        form.resetFields();
+                        setDrawerOpen(false);
+                    }}
+                    extra={
+                        <Space>
+                            <Button
+                                onClick={() => {
+                                    form.resetFields();
+                                    setDrawerOpen(false);
+                                }}>
+                                Cancel
+                            </Button>
+                            <Button type="primary" onClick={onHandleSubmit}>
+                                Submit
+                            </Button>
+                        </Space>
+                    }>
+                    <Form layout="vertical" form={form}>
+                        <ProductForm />
+                    </Form>
+                </Drawer>
       </Space>
     </>
   );

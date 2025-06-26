@@ -2,12 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, Col, Form, Input, Row, Select, Space, Switch, Typography } from 'antd';
 import { getCategories, getTenants } from '../../http/api';
 import type { Category, Tenant } from '../../types';
+import { useAuthStore } from '../../store';
 
 type ProductsFilterProps = {
     children?: React.ReactNode;
 };
 
 const ProductsFilter = ({ children }: ProductsFilterProps) => {
+    const { user } = useAuthStore();
     const { data: restaurants } = useQuery({
         queryKey: ['restaurants'],
         queryFn: () => {
@@ -50,31 +52,35 @@ const ProductsFilter = ({ children }: ProductsFilterProps) => {
                             </Form.Item>
                         </Col>
 
-                        <Col span={6}>
-                            <Form.Item name="tenantId">
-                                <Select
-                                    style={{ width: '100%' }}
-                                    allowClear={true}
-                                    placeholder="Select restaurant">
-                                    {restaurants?.data.data.map((restaurant: Tenant) => {
-                                        return (
-                                            <Select.Option
-                                                key={restaurant.id}
-                                                value={restaurant.id}>
-                                                {restaurant.name}
-                                            </Select.Option>
-                                        );
-                                    })}
-                                </Select>
-                            </Form.Item>
-                        </Col>
+                        {user!.role === 'admin' && (
+                            <Col span={6}>
+                                <Form.Item name="tenantId">
+                                    <Select
+                                        style={{ width: '100%' }}
+                                        allowClear={true}
+                                        placeholder="Select restaurant">
+                                        {restaurants?.data.data.map((restaurant: Tenant) => {
+                                            return (
+                                                <Select.Option
+                                                    key={restaurant.id}
+                                                    value={restaurant.id}>
+                                                    {restaurant.name}
+                                                </Select.Option>
+                                            );
+                                        })}
+                                    </Select>
+                                </Form.Item>
+                            </Col>
+                        )}
 
                         <Col span={6}>
                             <Space>
                             <Form.Item name="isPublish">
                                     <Switch defaultChecked={false} onChange={() => {}} />
                                 </Form.Item>
-                                <Typography.Text>Show only published</Typography.Text>
+                                <Typography.Text style={{ marginBottom: 22, display: 'block' }}>
+                                    Show only published
+                                </Typography.Text>
                             </Space>
                         </Col>
                     </Row>
