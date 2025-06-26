@@ -8,7 +8,6 @@ import { useAuthStore } from '../../store';
 import { usePermission } from '../../hooks/usePermissions';
 
 const loginUser = async (credentials: Credentials) => {
-    // server call logic
     const { data } = await login(credentials);
     return data;
 };
@@ -41,13 +40,11 @@ const LoginPage = () => {
         mutationKey: ['login'],
         mutationFn: loginUser,
         onSuccess: async () => {
-             const selfDataPromise = await refetch();
-              // logout or redirect to client ui
+            const selfDataPromise = await refetch();
+            // logout or redirect to client ui
             // window.location.href = "http://clientui/url"
             // "admin", "manager", "customer"
             if (!isAllowed(selfDataPromise.data)) {
-                await logout();
-                logoutFromStore();
                 logoutMutate();
                 return;
             }
@@ -64,6 +61,7 @@ const LoginPage = () => {
                         <Logo />
                     </Layout.Content>
                     <Card
+                        bordered={false}
                         style={{ width: 300 }}
                         title={
                             <Space
