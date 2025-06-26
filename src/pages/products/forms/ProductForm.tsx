@@ -1,12 +1,15 @@
-import { Card, Col, Form, Input, Row, Select, Space, Switch, Typography, Upload } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { Card, Col, Form, Input, Row, Select, Space, Switch, Typography } from 'antd';
 import type { Category, Tenant } from '../../../types';
 import { useQuery } from '@tanstack/react-query';
 import { getCategories, getTenants } from '../../../http/api';
 import Pricing from './Pricing';
 import Attributes from './Attributes';
+import ProductImage from './ProductImage';
+
 
 const ProductForm = () => {
+    
+
     const selectedCategory = Form.useWatch('categoryId');
     console.log(selectedCategory);
     const { data: categories } = useQuery({
@@ -22,6 +25,8 @@ const ProductForm = () => {
             return getTenants(`perPage=100&currentPage=1`);
         },
     });
+
+
 
     return (
         <Row>
@@ -91,22 +96,7 @@ const ProductForm = () => {
                     <Card title="Product image" bordered={false}>
                         <Row gutter={20}>
                             <Col span={12}>
-                                <Form.Item
-                                    label=""
-                                    name="image"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Please upload a product image',
-                                        },
-                                    ]}>
-                                    <Upload listType="picture-card">
-                                        <Space direction="vertical">
-                                            <PlusOutlined />
-                                            <Typography.Text>Upload</Typography.Text>
-                                        </Space>
-                                    </Upload>
-                                </Form.Item>
+                                <ProductImage />
                             </Col>
                         </Row>
                     </Card>
